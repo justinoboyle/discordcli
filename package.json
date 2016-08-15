@@ -1,0 +1,31 @@
+{
+  "name": "discordcli",
+  "version": "1.0.0",
+  "description": "A simple command-line and scriptable client for Discord.",
+  "main": "index.js",
+  "scripts": {
+    "test": "$ENV=test;node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justinoboyle/discordcli.git"
+  },
+  "author": "Justin O'Boyle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/justinoboyle/discordcli/issues"
+  },
+  "homepage": "https://github.com/justinoboyle/discordcli#readme",
+  "bin": {
+    "discordcli": "./index.js",
+    "discord": "./index.js",
+    "discd": "./index.js"
+  },
+  "dependencies": {
+    "colors": "^1.1.2",
+    "discord.js": "^8.1.0",
+    "readline": "^1.3.0",
+    "readline-sync": "^1.4.4",
+    "yargs": "^4.8.1"
+  }
+}
