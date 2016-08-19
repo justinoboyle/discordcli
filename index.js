@@ -143,7 +143,7 @@ console.error = function () {
 //-----------------------------
 
 console.log("Authenticating...");
-if (login.username == "token")
+if (login.username !== "token")
     client.login(login.username, login.password);
 else
     client.loginWithToken(login.password);
