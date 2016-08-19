@@ -143,7 +143,10 @@ console.error = function () {
 //-----------------------------
 
 console.log("Authenticating...");
-client.login(login.username, login.password);
+if (login.username == "token")
+    client.login(login.username, login.password);
+else
+    client.loginWithToken(login.password);
 client.on("ready", () => {
     process.stdout.write('\x1B[2J\x1B[0f');
     process.stdout.write("\x1Bc");
