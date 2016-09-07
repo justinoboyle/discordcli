@@ -194,12 +194,15 @@ client.on("ready", () => {
 });
 
 client.on("message", msg => {
-    if(global.logger) {
-        let h = hash(msg);
-        let frmat = eval(global.loggerconf.logFormat);
-        let loc = eval(global.loggerconf.logLocation);
-        fs.appendFile(loc(h.channel), frmat(h.channel, h.user, Date.now(), msg.content) + '\n');
-    }
+    try {
+        if(global.logger) {
+            let h = hash(msg);
+            let frmat = eval(global.loggerconf.logFormat);
+            let loc = eval(global.loggerconf.logLocation);
+            fs.appendFile(loc(h.channel), frmat(h.channel, h.user, Date.now(), msg.content) + '\n');
+        }
+    }catch(e) {}
+
     if (global.currentChannel == undefined)
         return;
     if (msg.author.id === client.user.id)
