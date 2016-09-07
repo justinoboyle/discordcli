@@ -48,7 +48,8 @@ jspm_packages
 .LSOverride
 
 # Icon must end with two \r
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -75,3 +76,8 @@ Temporary Items
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+
+### App ###
+/logs/
+logs
+logs/

@@ -7,11 +7,23 @@ const readline = require('readline');
 const readlineSync = require('readline-sync');
 const Discord = require('discord.js');
 const util = require('util');
+const mkdirp = require('mkdirp');
+const fs = require('fs');
+const sha512 = require('js-sha512').sha512;
+const md5 = require('md5');
 
 const client = new Discord.Client();
 
 global.currentServer = undefined;
 global.currentChannel = undefined;
+global.logger = false;
+global.loggerconf = {};
+global.__approot = __dirname;
+
+String.prototype.replaceAll = function (search, replacement) {
+    var target = this;
+    return target.split(search).join(replacement);
+};
 
 const login = {};
 
@@ -79,6 +91,34 @@ rl.on("line", function (line) {
                             console.log("#" + channel.name);
                 console.log("Use /join #channel to join any channel.");
             } catch (e) { }
+        return rl.prompt();
+    }
+    if (line.startsWith("/logger")) {
+        try {
+            let opts = line.startsWith("/logger ") ? JSON.parse(line.substring("/logger ".length).trim()) : {
+                servers: ['+*'],
+                channels: ['+*'],
+                anonymize: true,
+                logLocation: "(channel) => __approot + `/logs/${channel}`",
+                logFormat: "(channel, user, timestamp, message) => `${timestamp}: ${user}@${channel}: ${message.replaceAll('\\n', '\\\\n')}`"
+            };
+            let loc = eval(opts.logLocation)('init');
+            mkdirp(eval(opts.logLocation)(''), (err) => {
+                if(err)
+                    return (() => {
+                        console.log("Log location I/O error");
+                        rl.prompt();
+                    })();
+                global.logger = !global.logger;
+                console.log("Logger mode: " + (global.logger ? "on" : "off"));
+                if (global.logger)
+                    global.loggerconf = opts;
+            });
+
+        } catch (e) {
+            console.log("[Error] Unparsable JSON.");
+        }
+
         return rl.prompt();
     }
     if (line.startsWith("/join ")) {
@@ -151,6 +191,12 @@ client.on("ready", () => {
 });
 
 client.on("message", msg => {
+    if(global.logger) {
+        let h = hash(msg);
+        let frmat = eval(global.loggerconf.logFormat);
+        let loc = eval(global.loggerconf.logLocation);
+        fs.appendFile(loc(h.channel), frmat(h.channel, h.user, Date.now(), msg.content) + '\n');
+    }
     if (global.currentChannel == undefined)
         return;
     if (msg.author.id === client.user.id)
@@ -159,3 +205,9 @@ client.on("message", msg => {
         return;
     console.log(`<${msg.author.username + "#" + msg.author.discriminator}> ${msg.content}`);
 });
+
+function hash(msg) {
+    let channel = sha512(client.id + msg.channel.id );
+    let user = sha512(client.id + msg.channel.id + msg.author.id);
+    return { channel: md5(channel), user: md5(user) };
+}
