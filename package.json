@@ -1,6 +1,6 @@
 {
   "name": "discordcli",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "A simple command-line and scriptable client for Discord.",
   "main": "index.js",
   "scripts": {
@@ -17,9 +17,9 @@
   },
   "homepage": "https://github.com/justinoboyle/discordcli#readme",
   "bin": {
-    "discordcli": "./discord",
-    "discord": "./discord",
-    "discd": "./discord"
+    "discordcli": "./index.js",
+    "discord": "./index.js",
+    "discd": "./index.js"
   },
   "dependencies": {
     "babel-cli": "^6.18.0",

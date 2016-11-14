@@ -1,3 +1,4 @@
 #!/bin/bash
+dir=`npm root -g`
 cd /usr/local/lib/node_modules/discordcli
 ./node_modules/.bin/babel-node index.js $1
