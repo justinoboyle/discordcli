@@ -1,6 +1,6 @@
 {
   "name": "discordcli",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "description": "A simple command-line and scriptable client for Discord.",
   "main": "index.js",
   "scripts": {
