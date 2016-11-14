@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/node
 'use strict';
 
 var _inquirer = require('inquirer');
