@@ -17,9 +17,9 @@
   },
   "homepage": "https://github.com/justinoboyle/discordcli#readme",
   "bin": {
-    "discordcli": "./index.js",
-    "discord": "./index.js",
-    "discd": "./index.js"
+    "discordcli": "./discord",
+    "discord": "./discord",
+    "discd": "./discord"
   },
   "dependencies": {
     "babel-cli": "^6.18.0",

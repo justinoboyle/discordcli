@@ -8,6 +8,13 @@ import Discord from 'discord.js';
 import app from './app.js';
 import util from 'util';
 
+process.argv.forEach(function (val, index, array) {
+    if(val == "--token") {
+        console.log(fs.readFileSync('tokentutorial.md', 'utf-8'));
+        process.exit(1);
+    }
+});
+
 const defaultConfig = {
     token: ""
 }
@@ -54,7 +61,6 @@ client.on('ready', () => {
         console.log("");
     let tempArr = [];
     for (let x in client.guilds.array()) {
-        console.log(x);
         try {
             tempArr.push(client.guilds.array()[x].name);
         } catch (e) { }
