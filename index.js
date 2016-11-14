@@ -1,219 +1,89 @@
-#!/usr/bin/env node
-const argv = require('yargs').argv;
-const package = require('./package.json');
-const os = require('os');
-const colors = require('colors');
-const readline = require('readline');
-const readlineSync = require('readline-sync');
-const Discord = require('discord.js');
-const util = require('util');
-const mkdirp = require('mkdirp');
-const fs = require('fs');
-const sha512 = require('js-sha512').sha512;
-const md5 = require('md5');
+import inquirer from 'inquirer';
+import fileExists from './fileExists.js';
+import fs from 'fs';
+import mkdirSync from './mkdirSync.js';
+import BottomBar from './node_modules/inquirer/lib/ui/bottom-bar'
+import homedir from 'homedir';
+import Discord from 'discord.js';
+import app from './app.js';
+import util from 'util';
 
-const client = new Discord.Client();
-
-global.currentServer = undefined;
-global.currentChannel = undefined;
-global.logger = false;
-global.loggerconf = {};
-global.__approot = __dirname;
-
-String.prototype.replaceAll = function (search, replacement) {
-    var target = this;
-    return target.split(search).join(replacement);
-};
-
-const login = {};
-
-if (argv.about || argv.a)
-    return console.log([
-        package.name.bold.green + " version " + package.version.bold.green,
-        "Created by " + package.author + " with help from the community",
-        "Project page: " + package.homepage.cyan
-
-    ].join(os.EOL));
-
-if (!login.username)
-    login.username = readlineSync.question('Discord username: ');
-
-if (!login.password)
-    login.password = readlineSync.question('Discord password: ', { hideEchoBack: true });
-
-process.stdout.write('\x1B[2J\x1B[0f');
-process.stdout.write("\x1Bc");
-var rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-rl.setPrompt("> ", 2);
-rl.on("line", function (line) {
-    if (line.startsWith("/eval ")) {
-        console.log(eval(line.substring(6)));
-        return rl.prompt();
-    }
-    if (line.startsWith("/servers")) {
-        let search = line.startsWith("/servers ") ? line.substring("/servers ".length) : "";
-        if (line.includes(""))
-            try {
-                for (let id in client.servers)
-                    if (search == "" || (client.servers[id].name.toLowerCase().includes(search.toLowerCase())))
-                        console.log(id + ": " + client.servers[id].name)
-                console.log("Use /connect server to connect to any server.");
-            } catch (e) { }
-        return rl.prompt();
-    }
-    if (line.startsWith("/connect ")) {
-        let connect = line.substring("/connect ".length);
-        try {
-            let server = client.servers[parseInt(connect)];
-            global.currentServer = server;
-            global.currentChannel = undefined;
-            console.log("Connected to server! Use /channels to list channels");
-        } catch (e) {
-            console.log("That is not a valid server. Use /servers to list servers.");
-        }
-        return rl.prompt();
-    }
-    if (line.startsWith("/channels")) {
-        if (currentServer == undefined) {
-            console.log("Connect to a server first. Use /servers to list servers and /connect to connect.");
-            return rl.prompt();
-        }
-        let search = line.startsWith("/channels ") ? line.substring("/channels ".length) : "";
-        if (line.includes(""))
-            try {
-                for (let channel of currentServer.channels)
-                    if (search == "" || (channel.name.toLowerCase().includes(search.toLowerCase())))
-                        if (channel.type == "text")
-                            console.log("#" + channel.name);
-                console.log("Use /join #channel to join any channel.");
-            } catch (e) { }
-        return rl.prompt();
-    }
-    if (line.startsWith("/logger")) {
-        try {
-            let opts = line.startsWith("/logger ") ? JSON.parse(line.substring("/logger ".length).trim()) : {
-                servers: ['+*'],
-                channels: ['+*'],
-                anonymize: true,
-                logLocation: "(channel) => __approot + `/logs/${channel}`",
-                logFormat: "(channel, user, timestamp, message) => `${timestamp}: ${user}@${channel}: ${message.replaceAll('\\n', '\\\\n')}`"
-            };
-            let loc = eval(opts.logLocation)('init');
-            mkdirp(eval(opts.logLocation)(''), (err) => {
-                if(err)
-                    return (() => {
-                        console.log("Log location I/O error");
-                        rl.prompt();
-                    })();
-                global.logger = !global.logger;
-                console.log("Logger mode: " + (global.logger ? "on" : "off"));
-                if (global.logger)
-                    global.loggerconf = opts;
-            });
-
-        } catch (e) {
-            console.log("[Error] Unparsable JSON.");
-        }
-
-        return rl.prompt();
-    }
-    if (line.startsWith("/join ")) {
-        if (currentServer == undefined) {
-            console.log("Connect to a server first. Use /servers to list servers and /connect to connect.");
-            return rl.prompt();
-        }
-        let connect = line.substring("/join ".length + 1);
-        console.log(connect);
-        try {
-            for (let channel of global.currentServer.channels) {
-                if (channel.name.toLowerCase() == connect.toLowerCase()) {
-                    global.currentChannel = channel;
-                    console.log("Connected to channel!");
-                    return rl.prompt();
-                }
-            }
-
-
-
-        } catch (e) {
-            console.log("That is not a valid channel. Use /channels to list servers.");
-        }
-        return rl.prompt();
-    }
-    if (global.currentChannel == undefined)
-        return rl.prompt();
-    client.sendMessage(global.currentChannel, line);
-    rl.prompt();
-});
-rl.on('close', function () {
-    return process.exit(1);
-});
-rl.on("SIGINT", function () {
-    rl.clearLine();
-    process.exit(1);
-});
-rl.prompt();
-
-var fu = function (type, args) {
-    var t = Math.ceil((rl.line.length + 3) / process.stdout.columns);
-    var text = util.format.apply(console, args);
-    rl.output.write("\n\x1B[" + t + "A\x1B[0J");
-    rl.output.write(text + "\n");
-    rl.output.write(Array(t).join("\n\x1B[E"));
-    rl._refreshLine();
-};
-
-console.log = function () {
-    fu("log", arguments);
-};
-console.warn = function () {
-    fu("warn", arguments);
-};
-console.info = function () {
-    fu("info", arguments);
-};
-console.error = function () {
-    fu("error", arguments);
-};
-
-//-----------------------------
-
-console.log("Authenticating...");
-if (login.username !== "token")
-    client.login(login.username, login.password);
-else
-    client.loginWithToken(login.password);
-client.on("ready", () => {
-    process.stdout.write('\x1B[2J\x1B[0f');
-    process.stdout.write("\x1Bc");
-    console.log(`Authentication successful! \n${client.servers.length} servers available.\nType /servers to list channels.`);
-});
-
-client.on("message", msg => {
-    try {
-        if(global.logger) {
-            let h = hash(msg);
-            let frmat = eval(global.loggerconf.logFormat);
-            let loc = eval(global.loggerconf.logLocation);
-            fs.appendFile(loc(h.channel), frmat(h.channel, h.user, Date.now(), msg.content) + '\n');
-        }
-    }catch(e) {}
-
-    if (global.currentChannel == undefined)
-        return;
-    if (msg.author.id === client.user.id)
-        return;
-    if (msg.channel.id !== global.currentChannel.id)
-        return;
-    console.log(`<${msg.author.username + "#" + msg.author.discriminator}> ${msg.content}`);
-});
-
-function hash(msg) {
-    let channel = sha512(client.id + msg.channel.id );
-    let user = sha512(client.id + msg.channel.id + msg.author.id);
-    return { channel: md5(channel), user: md5(user) };
+const defaultConfig = {
+    token: ""
 }
+try {
+    global.config = JSON.parse(fs.readFileSync(homedir() + '/discord.json')) || defaultConfig;
+} catch (e) {
+    printNoConfig();
+    fs.writeFileSync(homedir() + '/discord.json', JSON.stringify(defaultConfig, null, 4));
+}
+
+function printNoConfig() {
+    console.log(`Personal token is not present in ~/discord.json file.
+    Example configuration has been copied if the file does not exists.
+    For help on getting your personal Discord token, type discord --token`);
+    process.exit(1);
+    return;
+}
+
+for (let i = 0; i < 3000; i++)
+    console.log("");
+
+var loader = [
+    '/ Connecting to Discord.',
+    '| Connecting to Discord..',
+    '\\ Connecting to Discord...',
+    '- Connecting to Discord'
+];
+var i = 4;
+var ui = new BottomBar({ bottomBar: loader[i % 4] });
+
+let cnt = true;
+setInterval(() => {
+    if (cnt)
+        ui.updateBottomBar(loader[i++ % 4]);
+}, 100);
+ui.close();
+var spawn = require('child_process').spawn;
+global.client = new Discord.Client();
+
+client.on('ready', () => {
+    cnt = false;
+    console.log("----- DO NOT COPY LOGS THIS WAY -----");
+    for (let i = 0; i < process.stdout.rows; i++)
+        console.log("");
+    let tempArr = [];
+    for (let x in client.guilds.array()) {
+        console.log(x);
+        try {
+            tempArr.push(client.guilds.array()[x].name);
+        } catch (e) { }
+
+    }
+
+    inquirer.prompt([
+        {
+            type: 'rawlist',
+            name: 'server',
+            message: 'Select a Server',
+            choices: tempArr
+        }
+    ]).then((answers) => {
+        console.log("----- DO NOT COPY LOGS THIS WAY -----");
+        for (let i = 0; i < process.stdout.rows; i++)
+            console.log("");
+        global.guild = getGuildByName(answers.server);
+        console.log(util.inspect(global.guild));
+        global.channel = global.guild.defaultChannel;
+        return app();
+    });
+});
+
+function getGuildByName(name) {
+    for (let guild of client.guilds.array()) {
+        if (guild.name == name)
+            return guild;
+    }
+    return undefined;
+}
+client.login(global.config.token);
